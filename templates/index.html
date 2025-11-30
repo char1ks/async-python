@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Metrics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; }
+        .metrics { display: flex; justify-content: space-around; margin-bottom: 20px; }
+        .metric { text-align: center; padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 30%; }
+        canvas { max-width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Мониторинг WebSocket Сервера</h1>
+        <div class="metrics">
+            <div class="metric">
+                <h3>RPS</h3>
+                <p id="rps">0</p>
+            </div>
+            <div class="metric">
+                <h3>Соединения</h3>
+                <p id="connections">0</p>
+            </div>
+            <div class="metric">
+                <h3>Всего сообщений</h3>
+                <p id="total_messages">0</p>
+            </div>
+        </div>
+        <div>
+            <h3>График RPS (последние 60 сек)</h3>
+            <canvas id="rpsChart"></canvas>
+        </div>
+        <div class="metrics">
+            <div class="metric">
+                <h3>CPU (%)</h3>
+                <p id="cpu_percent">0</p>
+            </div>
+            <div class="metric">
+                <h3>Сеть (отправлено байт)</h3>
+                <p id="net_sent">0</p>
+            </div>
+            <div class="metric">
+                <h3>Сеть (получено байт)</h3>
+                <p id="net_recv">0</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        const ctx = document.getElementById('rpsChart').getContext('2d');
+        const rpsChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'RPS', data: [], borderColor: 'blue', fill: false }] },
+            options: { scales: { y: { beginAtZero: true } } }
+        });
+
+        function updateMetrics() {
+            fetch('/metrics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('rps').innerText = data.rps;
+                    document.getElementById('connections').innerText = data.connections;
+                    document.getElementById('total_messages').innerText = data.total_messages;
+                    document.getElementById('cpu_percent').innerText = data.cpu_percent.toFixed(2);
+                    document.getElementById('net_sent').innerText = data.net_sent;
+                    document.getElementById('net_recv').innerText = data.net_recv;
+
+                    rpsChart.data.labels = Array.from({length: data.rps_history.length}, (_, i) => i + 1);
+                    rpsChart.data.datasets[0].data = data.rps_history;
+                    rpsChart.update();
+                });
+        }
+
+        setInterval(updateMetrics, 1000);
+        updateMetrics();
+    </script>
+</body>
+</html>

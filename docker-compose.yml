@@ -1,0 +1,24 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ws-server
+    ports:
+      - "8765:8765"
+      - "5001:5001"  # Для Flask UI
+    restart: unless-stopped
+
+  artillery:
+    image: artilleryio/artillery:latest
+    container_name: ws-artillery
+    depends_on:
+      - server
+    profiles:
+      - load
+    working_dir: /work
+    volumes:
+      - ./ws-load.yml:/work/ws-load.yml:ro
+      - ./reports:/work/reports
+    entrypoint: /bin/sh -c
+    command: "artillery run --output /work/reports/result.json /work/ws-load.yml && artillery report -o /work/reports/report.html /work/reports/result.json"
