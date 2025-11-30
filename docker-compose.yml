@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
 
   artillery:
-    image: artilleryio/artillery:latest
+    image: node:20-alpine
     container_name: ws-artillery
     depends_on:
       - server
@@ -20,5 +20,9 @@ services:
     volumes:
       - ./ws-load.yml:/work/ws-load.yml:ro
       - ./reports:/work/reports
-    entrypoint: /bin/sh -c
-    command: "artillery run --output /work/reports/result.json /work/ws-load.yml && artillery report -o /work/reports/report.html /work/reports/result.json"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        npm install -g artillery@latest
+        artillery run --output /work/reports/result.json /work/ws-load.yml
+        artillery report -o /work/reports/report.html /work/reports/result.json
